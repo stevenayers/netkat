@@ -15,14 +15,15 @@ var (
 
 func main() {
 	flag.Parse()
-	var r netkat.Route
+	var ch netkat.Checker
 	netkat.InitLogger(log.NewSyncWriter(os.Stdout), "error")
 	client := netkat.InitClient(*context, *config)
-	err := r.ParseTarget(*target)
+
+	err := ch.ParseTarget(*target)
 	if err != nil {
 
 	}
-	components := client.GetComponents()
-	r.FindRoute(components)
+	ch.KubernetesComponents = client.GetComponents()
+	ch.CheckKubernetesRouteFromHost()
 
 }

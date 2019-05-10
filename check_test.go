@@ -32,7 +32,7 @@ var (
 
 func (s *StoreSuite) TestTarget() {
 	for _, test := range TargetTests {
-		var r netkat.Route
+		var r netkat.Checker
 		err := r.ParseTarget(test.RawUrl)
 		if err != nil {
 			s.T().Fatal(err)
@@ -43,4 +43,15 @@ func (s *StoreSuite) TestTarget() {
 		fmt.Println(r.Target.IpAddress.String())
 	}
 
+}
+
+func (s *StoreSuite) TestCheckKubernetesRouteFromHost() {
+	var ch netkat.Checker
+	var targetString string
+	err := ch.ParseTarget(targetString)
+	if err != nil {
+		s.T().Fatal(err)
+	}
+	ch.KubernetesComponents = s.components
+	ch.RunChecks()
 }

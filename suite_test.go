@@ -1,10 +1,12 @@
 package netkat_test
 
 import (
-	"fmt"
+	"encoding/json"
 	"github.com/go-kit/kit/log"
-	"github.com/neo4j/neo4j-go-driver/neo4j"
 	"github.com/stretchr/testify/suite"
+	"io/ioutil"
+	"k8s.io/api/core/v1"
+	"k8s.io/api/extensions/v1beta1"
 	"netkat"
 	"os"
 	"testing"
@@ -13,8 +15,8 @@ import (
 type (
 	StoreSuite struct {
 		suite.Suite
-		client netkat.Client
-		driver neo4j.Driver
+		client     netkat.Client
+		components *netkat.KubernetesComponents
 	}
 )
 
@@ -28,10 +30,7 @@ func (s *StoreSuite) SetupTest() {
 }
 
 func (s *StoreSuite) TearDownSuite() {
-	err := s.driver.Close()
-	if err != nil {
-		fmt.Print(err)
-	}
+
 }
 
 func TestStoreSuite(t *testing.T) {

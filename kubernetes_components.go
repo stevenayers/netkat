@@ -3,19 +3,13 @@ package netkat
 import (
 	"errors"
 	"github.com/go-kit/kit/log/level"
+	"k8s.io/api/core/v1"
+	"k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/clientcmd"
 	"net"
-	"os"
 )
 
 type (
-	Client struct {
-		*kubernetes.Clientset
-	}
-
 	PodPort struct {
 		PodName        string `json:"name,omitempty"`
 		Namespace      string `json:"namespace,omitempty"`
@@ -31,21 +25,21 @@ type (
 	}
 
 	ServicePort struct {
-		Type          string `json:"type,omitempty"`
-		ClusterIP     net.IP `json:"clusterIP,omitempty"`
-		ServiceName   string `json:"name,omitempty"`
-		Namespace     string `json:"namespace,omitempty"`
-		ExternalIP    net.IP
-		AppSelector   string
-		Host          string
-		PortName      string `json:"name,omitempty"`
-		Protocol      string `json:"protocol,omitempty"`
-		Port          int32  `json:"port,omitempty"`
-		NodePort      int32  `json:"nodePort,omitempty"`
-		TargetIntPort int32  `json:"targetPort,omitempty"`
-		TargetStrPort string `json:"targetPort,omitempty"`
-		IngressPath   IngressPath
-		PodPort       []*PodPort
+		Type           string `json:"type,omitempty"`
+		ClusterIP      net.IP `json:"clusterIP,omitempty"`
+		ServiceName    string `json:"name,omitempty"`
+		Namespace      string `json:"namespace,omitempty"`
+		ExternalIP     net.IP
+		AppSelector    string
+		Host           string
+		SourcePortName string `json:"name,omitempty"`
+		Protocol       string `json:"protocol,omitempty"`
+		SourcePort     int32  `json:"port,omitempty"`
+		NodePort       int32  `json:"nodePort,omitempty"`
+		TargetPort     int32  `json:"targetPort,omitempty"`
+		TargetPortName string `json:"targetPort,omitempty"`
+		IngressPath    IngressPath
+		PodPort        []*PodPort
 	}
 
 	IngressPath struct {
@@ -60,38 +54,14 @@ type (
 		Service        []*ServicePort
 	}
 
-	Components struct {
+	KubernetesComponents struct {
 		IngressPaths []*IngressPath
 		ServicePorts []*ServicePort
 		PodPorts     []*PodPort
 	}
 )
 
-func InitClient(context string, kubeConfig string) (k8sClient Client) {
-	config, err := buildConfigFromFlags(context, kubeConfig)
-	if err != nil {
-		_ = level.Error(Logger).Log("msg", err)
-		os.Exit(1)
-	}
-
-	clientSet, err := kubernetes.NewForConfig(config)
-	if err != nil {
-		_ = level.Error(Logger).Log("msg", err)
-		os.Exit(1)
-	}
-	k8sClient = Client{clientSet}
-	return
-}
-
-func buildConfigFromFlags(context, kubeConfig string) (*rest.Config, error) {
-	return clientcmd.NewNonInteractiveDeferredLoadingClientConfig(
-		&clientcmd.ClientConfigLoadingRules{ExplicitPath: kubeConfig},
-		&clientcmd.ConfigOverrides{
-			CurrentContext: context,
-		}).ClientConfig()
-}
-
-func (co *Components) FindIngressPathForHost(t *Target) (ingressPath *IngressPath, err error) {
+func (co *KubernetesComponents) FindIngressPathForHost(t *Target) (ingressPath *IngressPath, err error) {
 	var ingressPaths []*IngressPath
 	for _, i := range co.IngressPaths {
 		if t.Host == i.Host && t.Path == i.Path && t.IpAddress.Equal(i.IpAddress) {
@@ -109,10 +79,10 @@ func (co *Components) FindIngressPathForHost(t *Target) (ingressPath *IngressPat
 	return
 }
 
-func (co *Components) FindServicePortForHost(t *Target) (servicePort *ServicePort, err error) {
+func (co *KubernetesComponents) FindServicePortForHost(t *Target) (servicePort *ServicePort, err error) {
 	var servicePorts []*ServicePort
 	for _, s := range co.ServicePorts {
-		if t.Host == s.Host && t.Port == s.Port && t.IpAddress.Equal(s.ExternalIP) {
+		if t.Host == s.Host && t.Port == s.SourcePort && t.IpAddress.Equal(s.ExternalIP) {
 			servicePorts = append(servicePorts, s)
 		}
 	}
@@ -127,10 +97,10 @@ func (co *Components) FindServicePortForHost(t *Target) (servicePort *ServicePor
 	return
 }
 
-func (co *Components) FindServicePortForIngressPath(p *IngressPath) (servicePort *ServicePort, err error) {
+func (co *KubernetesComponents) FindServicePortForIngressPath(i *IngressPath) (servicePort *ServicePort, err error) {
 	var servicePorts []*ServicePort
 	for _, s := range co.ServicePorts {
-		if p.Namespace == s.Namespace && p.ServiceName == s.ServiceName && (p.ServiceIntPort == s.Port || p.ServiceStrPort == s.PortName) {
+		if i.Namespace == s.Namespace && i.ServiceName == s.ServiceName && (i.ServiceIntPort == s.SourcePort || i.ServiceStrPort == s.SourcePortName) {
 			servicePorts = append(servicePorts, s)
 		}
 	}
@@ -145,28 +115,22 @@ func (co *Components) FindServicePortForIngressPath(p *IngressPath) (servicePort
 	return
 }
 
-func (co *Components) FindPodPortForServicePort(s *ServicePort) (podPort *PodPort, err error) {
-	var podPorts []*PodPort
+func (co *KubernetesComponents) FindPodPortForServicePort(s *ServicePort) (podPorts []*PodPort, err error) {
 	for _, p := range co.PodPorts {
-		if s.Namespace == p.Namespace && s.AppSelector == p.App && (s.TargetIntPort == p.ContainerPort || s.TargetStrPort == p.PortName) {
+		if s.Namespace == p.Namespace && s.AppSelector == p.App && (s.TargetPort == p.ContainerPort || s.TargetPortName == p.PortName) {
 			podPorts = append(podPorts, p)
 		}
 	}
-	switch {
-	case len(podPorts) > 1:
-		err = errors.New("found more than one pod port matching the service port")
-	case len(podPorts) == 0:
+	if len(podPorts) == 0 {
 		err = errors.New("could not find pod port matching the service port")
-	default:
-		podPort = podPorts[0]
 	}
 	return
 }
 
-func (co *Components) FindServicePortForPodPort(p *PodPort) (servicePort *ServicePort, err error) {
+func (co *KubernetesComponents) FindServicePortForPodPort(p *PodPort) (servicePort *ServicePort, err error) {
 	var servicePorts []*ServicePort
 	for _, s := range co.ServicePorts {
-		if p.Namespace == s.Namespace && p.App == s.AppSelector && (p.ContainerPort == s.TargetIntPort || p.PortName == s.TargetStrPort) {
+		if p.Namespace == s.Namespace && p.App == s.AppSelector && (p.ContainerPort == s.TargetPort || p.PortName == s.TargetPortName) {
 			servicePorts = append(servicePorts, s)
 		}
 	}
@@ -181,11 +145,11 @@ func (co *Components) FindServicePortForPodPort(p *PodPort) (servicePort *Servic
 	return
 }
 
-func (co *Components) FindIngressPathForServicePort(s *ServicePort) (ingressPath *IngressPath, err error) {
+func (co *KubernetesComponents) FindIngressPathForServicePort(s *ServicePort) (ingressPath *IngressPath, err error) {
 	var ingressPaths []*IngressPath
-	for _, p := range co.IngressPaths {
-		if p.Namespace == s.Namespace && p.ServiceName == s.ServiceName && (p.ServiceIntPort == s.Port || p.ServiceStrPort == s.PortName) {
-			ingressPaths = append(ingressPaths, p)
+	for _, i := range co.IngressPaths {
+		if i.Namespace == s.Namespace && i.ServiceName == s.ServiceName && (i.ServiceIntPort == s.SourcePort || i.ServiceStrPort == s.SourcePortName) {
+			ingressPaths = append(ingressPaths, i)
 		}
 	}
 	switch {
@@ -199,19 +163,27 @@ func (co *Components) FindIngressPathForServicePort(s *ServicePort) (ingressPath
 	return
 }
 
-func (c *Client) GetComponents() (components *Components) {
+func (c *Client) GetComponents() (components *KubernetesComponents) {
 	pods := c.GetPods()
 	svcs := c.GetServices()
 	ings := c.GetIngresses()
-	components = &Components{ings, svcs, pods}
+	components = &KubernetesComponents{
+		IngressesToIngressPaths(ings),
+		ServicesToServicePorts(svcs),
+		PodsToPodPorts(pods),
+	}
 	return
 }
 
-func (c *Client) GetPods() (podPorts []*PodPort) {
+func (c *Client) GetPods() (apiPods *v1.PodList) {
 	apiPods, err := c.CoreV1().Pods("").List(metav1.ListOptions{})
 	if err != nil {
 		_ = level.Error(Logger).Log("msg", err)
 	}
+	return
+}
+
+func PodsToPodPorts(apiPods *v1.PodList) (podPorts []*PodPort) {
 	for _, pod := range apiPods.Items {
 		for _, container := range pod.Spec.Containers {
 			for _, port := range container.Ports {
@@ -240,11 +212,15 @@ func (c *Client) GetPods() (podPorts []*PodPort) {
 	return
 }
 
-func (c *Client) GetServices() (servicePorts []*ServicePort) {
+func (c *Client) GetServices() (apiServices *v1.ServiceList) {
 	apiServices, err := c.CoreV1().Services("").List(metav1.ListOptions{})
 	if err != nil {
 		_ = level.Error(Logger).Log("msg", err)
 	}
+	return
+}
+
+func ServicesToServicePorts(apiServices *v1.ServiceList) (servicePorts []*ServicePort) {
 	for _, service := range apiServices.Items {
 		for _, port := range service.Spec.Ports {
 			hostName, ok := service.ObjectMeta.Annotations["external-dns.alpha.kubernetes.io/hostname"]
@@ -259,22 +235,28 @@ func (c *Client) GetServices() (servicePorts []*ServicePort) {
 			if !ok {
 				appSelector = ""
 			}
+			var targetIntPort int32
+			if port.TargetPort.IntVal == 0 && port.TargetPort.StrVal == "" {
+				targetIntPort = port.Port
+			} else {
+				targetIntPort = port.TargetPort.IntVal
+			}
 			servicePorts = append(
 				servicePorts,
 				&ServicePort{
-					ServiceName:   service.ObjectMeta.Name,
-					AppSelector:   appSelector,
-					Type:          string(service.Spec.Type),
-					ClusterIP:     net.ParseIP(service.Spec.ClusterIP),
-					ExternalIP:    ip,
-					Host:          hostName,
-					Namespace:     service.ObjectMeta.Namespace,
-					PortName:      port.Name,
-					Protocol:      string(port.Protocol),
-					Port:          port.Port,
-					NodePort:      port.NodePort,
-					TargetIntPort: port.TargetPort.IntVal,
-					TargetStrPort: port.TargetPort.StrVal,
+					ServiceName:    service.ObjectMeta.Name,
+					AppSelector:    appSelector,
+					Type:           string(service.Spec.Type),
+					ClusterIP:      net.ParseIP(service.Spec.ClusterIP),
+					ExternalIP:     ip,
+					Host:           hostName,
+					Namespace:      service.ObjectMeta.Namespace,
+					Protocol:       string(port.Protocol),
+					SourcePortName: port.Name,
+					SourcePort:     port.Port,
+					NodePort:       port.NodePort,
+					TargetPort:     targetIntPort,
+					TargetPortName: port.TargetPort.StrVal,
 				},
 			)
 
@@ -284,11 +266,15 @@ func (c *Client) GetServices() (servicePorts []*ServicePort) {
 	return
 }
 
-func (c *Client) GetIngresses() (ingressPaths []*IngressPath) {
+func (c *Client) GetIngresses() (apiIngresses *v1beta1.IngressList) {
 	apiIngresses, err := c.ExtensionsV1beta1().Ingresses("").List(metav1.ListOptions{})
 	if err != nil {
 		_ = level.Error(Logger).Log("msg", err)
 	}
+	return
+}
+
+func IngressesToIngressPaths(apiIngresses *v1beta1.IngressList) (ingressPaths []*IngressPath) {
 	for _, ingressResource := range apiIngresses.Items {
 		for _, ingress := range ingressResource.Spec.Rules {
 			for _, path := range ingress.IngressRuleValue.HTTP.Paths {
