@@ -1,6 +1,22 @@
 # netkat
 CLI for troubleshooting kubernetes networking issues.
 
+## Getting Started
+
+Build from source:
+* Requires Go 1.11.5 and dep package management
+```bash
+git clone git@github.com:stevenayers/netkat.git
+cd netkat
+dep ensure
+go build cmd/main.go
+mv ./main /usr/local/bin/netkat
+```
+For help:
+```bash
+$ netkat -h
+```
+
 Example Usage:
 ```bash
 $ netkat -target grafana.digital.foobar.com -context kops-dev -config ~/.kube/config
