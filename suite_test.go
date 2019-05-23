@@ -1,12 +1,8 @@
 package netkat_test
 
 import (
-	"encoding/json"
 	"github.com/go-kit/kit/log"
 	"github.com/stretchr/testify/suite"
-	"io/ioutil"
-	"k8s.io/api/core/v1"
-	"k8s.io/api/extensions/v1beta1"
 	"netkat"
 	"os"
 	"testing"

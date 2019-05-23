@@ -24,6 +24,6 @@ func main() {
 
 	}
 	ch.KubernetesComponents = client.GetComponents()
-	ch.CheckKubernetesRouteFromHost()
+	ch.RunChecks()
 
 }
