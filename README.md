@@ -1,4 +1,10 @@
 # netkat
+[![Build Status](https://travis-ci.org/stevenayers/netkat.svg?branch=master)](https://travis-ci.org/stevenayers/netkat)
+[![codecov.io Code Coverage](https://img.shields.io/codecov/c/github/stevenayers/netkat.svg)](https://codecov.io/github/stevenayers/netkat?branch=master)
+[![Go Report Card](https://goreportcard.com/badge/github.com/stevenayers/netkat)](https://goreportcard.com/report/github.com/stevenayers/netkat)
+[![Release](https://img.shields.io/badge/release-v0.1--alpha-5272B4.svg)](https://github.com/stevenayers/netkat/releases/tag/v0.1-alpha)
+[![GoDoc](https://godoc.org/github.com/stevenayers/netkat?status.svg)](https://godoc.org/github.com/stevenayers/netkat)
+
 CLI for troubleshooting kubernetes networking issues.
 
 ## Getting Started
@@ -95,7 +101,7 @@ Checks
 - CheckStatusIngressController (Not yet implemented)
   Checks nginx-ingress is healthy.
 - CheckStatusKubeDns (Not yet implemented)
-  Checks kube-dns is health
+  Checks kube-dns is healthy.
 - CheckListeningPod (Not yet implemented)
   Portforwards directly to pod and checks connection
 - CheckListeningService (Not yet implemented)
@@ -116,3 +122,10 @@ Checks
 - CheckDnsInternalPodToPod (Not yet implemented)
 ```
 
+
+Checks for v0.2-alpha:
+```bash
+- CheckStatusPod
+- CheckListeningPod
+
+```

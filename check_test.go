@@ -45,13 +45,37 @@ func (s *StoreSuite) TestTarget() {
 
 }
 
-func (s *StoreSuite) TestCheckKubernetesRouteFromHost() {
+func (s *StoreSuite) TestRunChecks() {
 	var ch netkat.Checker
-	var targetString string
-	err := ch.ParseTarget(targetString)
+	err := ch.ParseTarget(s.target)
 	if err != nil {
 		s.T().Fatal(err)
 	}
-	ch.KubernetesComponents = s.components
+	ch.KubernetesComponents = s.client.GetComponents()
 	ch.RunChecks()
+	assert.Equal(s.T(), 2, len(ch.PassedChecks), "Expected checks to pass")
+}
+
+func (s *StoreSuite) TestCheckKubernetesRouteFromHost() {
+	var ch netkat.Checker
+	err := ch.ParseTarget(s.target)
+	if err != nil {
+		s.T().Fatal(err)
+	}
+	ch.KubernetesComponents = s.client.GetComponents()
+	ch.CheckKubernetesRouteFromHost()
+	assert.Equal(s.T(), 1, len(ch.PassedChecks), "Expected CheckKubernetesRouteFromHost to pass")
+}
+
+func (s *StoreSuite) TestCheckStatusPod() {
+	var ch netkat.Checker
+	err := ch.ParseTarget(s.target)
+	if err != nil {
+		s.T().Fatal(err)
+	}
+	ch.KubernetesComponents = s.client.GetComponents()
+	ch.KubernetesRoute = &netkat.KubernetesRoute{}
+	ch.KubernetesRoute.Pods = ch.KubernetesComponents.PodPorts
+	ch.CheckStatusPod()
+	assert.Equal(s.T(), 1, len(ch.PassedChecks), "Expected CheckStatusPod to pass")
 }

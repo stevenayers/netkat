@@ -22,6 +22,7 @@ type (
 		Protocol       string `json:"protocol,omitempty"`
 		HostIP         net.IP `json:"hostIP,omitempty"`
 		ServicePort    ServicePort
+		PodStatus      string `json:"status,omitempty"`
 	}
 
 	ServicePort struct {
@@ -204,6 +205,7 @@ func PodsToPodPorts(apiPods *v1.PodList) (podPorts []*PodPort) {
 						PodName:        pod.ObjectMeta.Name,
 						Namespace:      pod.ObjectMeta.Namespace,
 						App:            appLabel,
+						PodStatus:      string(pod.Status.Phase),
 					},
 				)
 			}

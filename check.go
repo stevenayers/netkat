@@ -1,14 +1,16 @@
 package netkat
 
 import (
+	"fmt"
 	"github.com/go-kit/kit/log/level"
 	"github.com/goware/urlx"
 	"net"
 	"net/url"
-	"os"
 	"reflect"
+	"runtime"
 	"sort"
 	"strconv"
+	"strings"
 )
 
 type (
@@ -27,8 +29,9 @@ type (
 	}
 
 	KubernetesRoute struct {
-		IngressPath
-		ServicePort
+		Ingress *IngressPath
+		Service *ServicePort
+		Pods    []*PodPort
 	}
 
 	Target struct {
@@ -42,6 +45,7 @@ type (
 var (
 	checkList = []Check{
 		{"CheckKubernetesRouteFromHost", 0},
+		{"CheckStatusPod", 1},
 	}
 )
 
@@ -113,49 +117,96 @@ func (ch *Checker) InitChecks() {
 	}
 }
 
+func (ch *Checker) PassCheck() {
+	pc := make([]uintptr, 15)
+	n := runtime.Callers(2, pc)
+	frames := runtime.CallersFrames(pc[:n])
+	frame, _ := frames.Next()
+	fullName := strings.Split(frame.Function, ".")
+	functionName := fullName[len(fullName)-1]
+	fmt.Printf(
+		"--- PASS: %s\n", functionName,
+	)
+	ch.PassedChecks = append(ch.PassedChecks, functionName)
+}
+
+func (ch *Checker) FailCheck() {
+	pc := make([]uintptr, 15)
+	n := runtime.Callers(2, pc)
+	frames := runtime.CallersFrames(pc[:n])
+	frame, _ := frames.Next()
+	fullName := strings.Split(frame.Function, ".")
+	functionName := fullName[len(fullName)-1]
+	fmt.Printf(
+		"--- FAIL: %s\n", functionName,
+	)
+	ch.PassedChecks = append(ch.FailedChecks, functionName)
+}
+
 func (ch *Checker) CheckKubernetesRouteFromHost() {
 	PrintCheckHeader()
 	var err error
-	var ingressPath *IngressPath
-	var podPorts []*PodPort
-	var servicePort *ServicePort
 	indent := 0
+	ch.KubernetesRoute = &KubernetesRoute{}
 	PrintHost(ch.Target)
-	ingressPath, _ = ch.KubernetesComponents.FindIngressPathForHost(ch.Target)
-	if ingressPath == nil {
-		servicePort, err = ch.KubernetesComponents.FindServicePortForHost(ch.Target)
+	ch.KubernetesRoute.Ingress, _ = ch.KubernetesComponents.FindIngressPathForHost(ch.Target)
+	if ch.KubernetesRoute.Ingress == nil {
+		ch.KubernetesRoute.Service, err = ch.KubernetesComponents.FindServicePortForHost(ch.Target)
 		if err != nil {
 			_ = level.Error(Logger).Log("msg", err)
-			os.Exit(1)
+			ch.FailCheck()
+			return
 		}
-		if servicePort == nil {
+		if ch.KubernetesRoute.Service == nil {
 			_ = level.Error(Logger).Log("msg", "Could not find ingress or service matching host")
-			os.Exit(1)
+			ch.FailCheck()
+			return
 		}
-		PrintServicePort(servicePort, indent)
+		PrintServicePort(ch.KubernetesRoute.Service, indent)
 		indent = indent + 3
 	} else {
-		PrintIngressPath(ingressPath, indent)
+		PrintIngressPath(ch.KubernetesRoute.Ingress, indent)
 		indent = indent + 3
-		servicePort, err = ch.KubernetesComponents.FindServicePortForIngressPath(ingressPath)
+		ch.KubernetesRoute.Service, err = ch.KubernetesComponents.FindServicePortForIngressPath(ch.KubernetesRoute.Ingress)
 		if err != nil {
 			_ = level.Error(Logger).Log("msg", err)
-			os.Exit(1)
+			ch.FailCheck()
+			return
 		}
-		if servicePort == nil {
+		if ch.KubernetesRoute.Service == nil {
 			_ = level.Error(Logger).Log("msg", "Could not find service matching ingress rule")
-			os.Exit(1)
+			ch.FailCheck()
+			return
 		}
-		PrintServicePort(servicePort, indent)
+		PrintServicePort(ch.KubernetesRoute.Service, indent)
 		indent = indent + 3
 	}
-	podPorts, err = ch.KubernetesComponents.FindPodPortForServicePort(servicePort)
+	ch.KubernetesRoute.Pods, err = ch.KubernetesComponents.FindPodPortForServicePort(ch.KubernetesRoute.Service)
 	if err != nil {
 		_ = level.Error(Logger).Log("msg", err)
-		os.Exit(1)
+		ch.FailCheck()
+		return
 	}
-	for _, p := range podPorts {
+	for _, p := range ch.KubernetesRoute.Pods {
 		PrintPodPort(p, indent)
 	}
-	PrintPassFooter(ch)
+	ch.PassCheck()
+}
+
+func (ch *Checker) CheckStatusPod() {
+	PrintCheckHeader()
+	if len(ch.KubernetesRoute.Pods) > 0 {
+		for _, p := range ch.KubernetesRoute.Pods {
+			if p.PodStatus != "Running" {
+				_ = level.Error(Logger).Log("msg", "Not all pods have a status of `Running`.")
+				ch.FailCheck()
+				return
+			}
+		}
+	} else {
+		_ = level.Error(Logger).Log("msg", "No pods were found.")
+		ch.FailCheck()
+		return
+	}
+	ch.PassCheck()
 }

@@ -13,12 +13,14 @@ type (
 		suite.Suite
 		client     netkat.Client
 		components *netkat.KubernetesComponents
+		target     string
 	}
 )
 
 func (s *StoreSuite) SetupSuite() {
 	netkat.InitLogger(log.NewSyncWriter(os.Stdout), "error")
-	s.client = netkat.InitClient("default", "./config")
+	s.client = netkat.InitClient("netkat-test", "/Users/stevenayers/.kube/config")
+	s.target = "http://hello-world.info"
 }
 
 func (s *StoreSuite) SetupTest() {

@@ -14,7 +14,7 @@ func PrintCheckHeader() {
 	fullName := strings.Split(frame.Function, ".")
 	functionName := fullName[len(fullName)-1]
 	fmt.Printf(
-		"=== RUN   %s\n", functionName,
+		"=== RUN %s\n", functionName,
 	)
 }
 
@@ -35,19 +35,6 @@ func PrintCheckResults(ch *Checker) {
 
 }
 
-func PrintPassFooter(ch *Checker) {
-	pc := make([]uintptr, 15)
-	n := runtime.Callers(2, pc)
-	frames := runtime.CallersFrames(pc[:n])
-	frame, _ := frames.Next()
-	fullName := strings.Split(frame.Function, ".")
-	functionName := fullName[len(fullName)-1]
-	fmt.Printf(
-		"--- PASS: %s\n", functionName,
-	)
-	ch.PassedChecks = append(ch.PassedChecks, functionName)
-}
-
 func PrintHost(t *Target) {
 	fmt.Printf("host: %s\n", t.Host)
 	fmt.Printf("port: %d\n", t.Port)
@@ -59,7 +46,7 @@ func PrintHost(t *Target) {
 func PrintIngressPath(i *IngressPath, indent int) {
 	fmt.Printf("%v-> ingress: %s\n", strings.Repeat(" ", indent), i.IngressName)
 	fmt.Printf("%v   namespace: %s\n", strings.Repeat(" ", indent), i.Namespace)
-	fmt.Printf("%v   path: %s\n", strings.Repeat(" ", indent), i.IngressName)
+	fmt.Printf("%v   path: %s\n", strings.Repeat(" ", indent), i.Path)
 	fmt.Printf("%v   ip address: %s\n", strings.Repeat(" ", indent), i.IpAddress)
 }
 
