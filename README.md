@@ -25,7 +25,7 @@ $ netkat -h
 
 Example Usage:
 ```bash
-$ netkat -target grafana.digital.foobar.com -context kops-dev -config ~/.kube/config
+$ netkat grafana.digital.foobar.com -context kops-dev -config ~/.kube/config
 ```
 ```
 === RUN   CheckKubernetesRouteFromHost

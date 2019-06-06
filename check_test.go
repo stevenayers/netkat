@@ -2,8 +2,8 @@ package netkat_test
 
 import (
 	"fmt"
+	"github.com/stevenayers/netkat"
 	"github.com/stretchr/testify/assert"
-	"netkat"
 )
 
 type (

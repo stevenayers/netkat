@@ -3,7 +3,7 @@ package netkat_test
 import (
 	"encoding/json"
 	"fmt"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func (s *StoreSuite) TestGetPods() {
@@ -26,7 +26,7 @@ func (s *StoreSuite) TestGetPods() {
 }
 
 func (s *StoreSuite) TestGetServices() {
-	pods, err := s.client.CoreV1().Services("").List(metav1.ListOptions{})
+	pods, err := s.client.CoreV1().Services("").List(v1.ListOptions{})
 	if err != nil {
 		s.T().Fatal(err)
 	}
@@ -36,7 +36,7 @@ func (s *StoreSuite) TestGetServices() {
 }
 
 func (s *StoreSuite) TestGetIngress() {
-	pods, err := s.client.ExtensionsV1beta1().Ingresses("").List(metav1.ListOptions{})
+	pods, err := s.client.ExtensionsV1beta1().Ingresses("").List(v1.ListOptions{})
 	if err != nil {
 		s.T().Fatal(err)
 	}
@@ -46,7 +46,7 @@ func (s *StoreSuite) TestGetIngress() {
 }
 
 func (s *StoreSuite) TestGetDeployments() {
-	pods, err := s.client.ExtensionsV1beta1().Deployments("").List(metav1.ListOptions{})
+	pods, err := s.client.ExtensionsV1beta1().Deployments("").List(v1.ListOptions{})
 	if err != nil {
 		s.T().Fatal(err)
 	}

@@ -1,10 +1,12 @@
 package netkat_test
 
 import (
+	"fmt"
 	"github.com/go-kit/kit/log"
+	"github.com/stevenayers/netkat"
 	"github.com/stretchr/testify/suite"
-	"netkat"
 	"os"
+	"os/user"
 	"testing"
 )
 
@@ -18,8 +20,9 @@ type (
 )
 
 func (s *StoreSuite) SetupSuite() {
+	usr, _ := user.Current()
 	netkat.InitLogger(log.NewSyncWriter(os.Stdout), "error")
-	s.client = netkat.InitClient("netkat-test", "/Users/stevenayers/.kube/config")
+	s.client = netkat.InitClient("netkat-test", fmt.Sprintf("%v/.kube/config", usr.HomeDir))
 	s.target = "http://hello-world.info"
 }
 

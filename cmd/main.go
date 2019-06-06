@@ -6,7 +6,7 @@ import (
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/spf13/cobra"
-	"netkat"
+	"github.com/stevenayers/netkat"
 	"os"
 	"os/user"
 )
@@ -17,7 +17,7 @@ var (
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "netkat [target]",
+	Use:   "netkat [TARGET URL]",
 	Short: "Netkat is a CLI for troubleshooting kubernetes networking issues",
 	Args: func(cmd *cobra.Command, args []string) error {
 		if len(args) < 1 {
