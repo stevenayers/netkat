@@ -1,0 +1,41 @@
+module github.com/stevenayers/netkat
+
+go 1.13
+
+require (
+	github.com/PuerkitoBio/purell v1.1.1
+	github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578
+	github.com/davecgh/go-spew v1.1.1
+	github.com/go-kit/kit v0.8.0
+	github.com/go-logfmt/logfmt v0.4.0
+	github.com/gogo/protobuf v1.3.0
+	github.com/golang/protobuf v1.3.2
+	github.com/google/gofuzz v1.0.0
+	github.com/googleapis/gnostic v0.3.1
+	github.com/goware/urlx v0.2.0
+	github.com/imdario/mergo v0.3.7
+	github.com/inconshreveable/mousetrap v1.0.0
+	github.com/json-iterator/go v1.1.7
+	github.com/kr/logfmt v0.0.0-20140226030751-b84e30acd515
+	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd
+	github.com/modern-go/reflect2 v0.0.0-20180701023420-4b7aa43c6742
+	github.com/pmezard/go-difflib v1.0.0
+	github.com/spf13/cobra v0.0.5
+	github.com/spf13/pflag v1.0.5
+	github.com/stretchr/testify v1.4.0
+	golang.org/x/crypto v0.0.0-20190923035154-9ee001bba392
+	golang.org/x/net v0.0.0-20190923162816-aa69164e4478
+	golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45
+	golang.org/x/sys v0.0.0-20190924154521-2837fb4f24fe
+	golang.org/x/text v0.3.2
+	golang.org/x/time v0.0.0-20190921001708-c4c64cad1fd0
+	google.golang.org/appengine v1.6.3
+	gopkg.in/inf.v0 v0.9.1
+	gopkg.in/yaml.v2 v2.2.2
+	k8s.io/api v0.0.0-20190925180651-d58b53da08f5
+	k8s.io/apimachinery v0.0.0-20190923155427-ec87dd743e08
+	k8s.io/client-go v0.0.0-20190925195756-6ff11032556d
+	k8s.io/klog v1.0.0
+	k8s.io/utils v0.0.0-20190923111123-69764acb6e8e
+	sigs.k8s.io/yaml v1.1.0
+)
