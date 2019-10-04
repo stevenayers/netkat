@@ -72,7 +72,7 @@ Incorrect configuration just throws an error and prints out nothing. This needs 
 * Matches A record against ingress/service
 * Checks service/ingress config
 * Checks ports mappings
-* Checks port is open on pod (to be implemented)
+* Checks port is open on pod
 * Checks LB rules on cloud provider side (to be implemented)
 * Checks LoadBalancerSourceRanges (to be implemented)
 
