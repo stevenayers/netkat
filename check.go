@@ -18,6 +18,7 @@ type (
 		Target               *Target
 		KubernetesRoute      *KubernetesRoute
 		KubernetesComponents *KubernetesComponents
+		Client               Client
 		RequiredChecks       []string
 		PassedChecks         []string
 		FailedChecks         []string
@@ -46,6 +47,7 @@ var (
 	checkList = []Check{
 		{"CheckKubernetesRouteFromHost", 0},
 		{"CheckStatusPod", 1},
+		{"CheckListeningPod", 2},
 	}
 )
 
@@ -199,6 +201,31 @@ func (ch *Checker) CheckStatusPod() {
 		for _, p := range ch.KubernetesRoute.Pods {
 			if p.PodStatus != "Running" {
 				_ = level.Error(Logger).Log("msg", "Not all pods have a status of `Running`.")
+				ch.FailCheck()
+				return
+			}
+		}
+	} else {
+		_ = level.Error(Logger).Log("msg", "No pods were found.")
+		ch.FailCheck()
+		return
+	}
+	ch.PassCheck()
+}
+
+func (ch *Checker) CheckListeningPod() {
+	PrintCheckHeader()
+	if len(ch.KubernetesRoute.Pods) > 0 {
+		for _, p := range ch.KubernetesRoute.Pods {
+			res, err := ch.Client.GetPortforwardResponse(p)
+			if err != nil {
+				_ = level.Error(Logger).Log(
+					"msg", fmt.Sprintf("Error connecting to port: %v", err))
+				return
+			}
+			if res.StatusCode != 200 {
+				_ = level.Error(Logger).Log(
+					"msg", fmt.Sprintf("Bad HTTP Status Code: %v", res.StatusCode))
 				ch.FailCheck()
 				return
 			}

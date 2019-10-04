@@ -1,12 +1,20 @@
 package netkat
 
 import (
+	"bytes"
 	"errors"
+	"fmt"
 	"github.com/go-kit/kit/log/level"
 	"k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/tools/portforward"
+	"k8s.io/client-go/transport/spdy"
 	"net"
+	"net/http"
+	"net/url"
+	"strings"
+	"sync"
 )
 
 type (
@@ -296,5 +304,50 @@ func IngressesToIngressPaths(apiIngresses *v1beta1.IngressList) (ingressPaths []
 			}
 		}
 	}
+	return
+}
+
+func (c *Client) GetPortforwardResponse(p *PodPort) (res *http.Response, err error) {
+	roundTripper, upgrader, err := spdy.RoundTripperFor(c.Config)
+	if err != nil {
+		_ = level.Error(Logger).Log("msg", err)
+		return
+	}
+	path := fmt.Sprintf("/api/v1/namespaces/%s/pods/%s/portforward", p.Namespace, p.PodName)
+	hostIP := strings.TrimLeft(c.Config.Host, "htps:/")
+	serverURL := url.URL{Scheme: "https", Path: path, Host: hostIP}
+	dialer := spdy.NewDialer(upgrader, &http.Client{Transport: roundTripper}, http.MethodPost, &serverURL)
+	stopChan, readyChan := make(chan struct{}, 1), make(chan struct{}, 1)
+	out, errOut := new(bytes.Buffer), new(bytes.Buffer)
+	forwarder, err := portforward.New(dialer, []string{fmt.Sprintf("%v", p.ContainerPort)}, stopChan, readyChan, out, errOut)
+	if err != nil {
+		_ = level.Error(Logger).Log("msg", err)
+		return
+	}
+	wait := sync.WaitGroup{}
+	wait.Add(1)
+	go func() {
+		go func() {
+			for range readyChan {
+			}
+			if len(errOut.String()) != 0 {
+				_ = level.Error(Logger).Log("msg", errOut.String())
+				wait.Done()
+				return
+			} else if len(out.String()) != 0 {
+				fmt.Println(out.String())
+			}
+			wait.Done()
+		}()
+		if err = forwarder.ForwardPorts(); err != nil {
+			_ = level.Error(Logger).Log("msg", err)
+			wait.Done()
+			return
+		}
+	}()
+	wait.Wait()
+	pfUrl := fmt.Sprintf("http://127.0.0.1:%v", p.ContainerPort)
+	res, err = http.Get(pfUrl)
+	close(stopChan)
 	return
 }

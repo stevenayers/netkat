@@ -11,6 +11,7 @@ import (
 type (
 	Client struct {
 		*kubernetes.Clientset
+		Config *rest.Config
 	}
 )
 
@@ -26,7 +27,7 @@ func InitClient(context string, kubeConfig string) (k8sClient Client) {
 		_ = level.Error(Logger).Log("msg", err)
 		os.Exit(1)
 	}
-	k8sClient = Client{clientSet}
+	k8sClient = Client{clientSet, config}
 	return
 }
 

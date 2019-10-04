@@ -32,8 +32,8 @@ var rootCmd = &cobra.Command{
 			usr, _ := user.Current()
 			config = fmt.Sprintf("%v/.kube/config", usr.HomeDir)
 		}
-		client := netkat.InitClient(context, config)
-		ch.KubernetesComponents = client.GetComponents()
+		ch.Client = netkat.InitClient(context, config)
+		ch.KubernetesComponents = ch.Client.GetComponents()
 
 		err := ch.ParseTarget(args[0])
 		if err != nil {

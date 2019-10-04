@@ -13,6 +13,11 @@ type (
 		Port   int32
 		Path   string
 	}
+
+	PodTest struct {
+		PodPort  netkat.PodPort
+		Expected int
+	}
 )
 
 var (
@@ -27,6 +32,11 @@ var (
 		{"http://google.com/path", "google.com", 80, "/path"},
 		{"http://google.com:8000/path", "google.com", 8000, "/path"},
 		{"google.com:8000/path", "google.com", 8000, "/path"},
+	}
+	PodTests = []PodTest{
+		{netkat.PodPort{PodName: "web-55b8c6998d-x7gpj", Namespace: "default", ContainerPort: 8080}, 1},
+		{netkat.PodPort{PodName: "web-55b8c6998d-x7gpj", Namespace: "default", ContainerPort: 1234}, 0},
+		{netkat.PodPort{PodName: "bad-name", Namespace: "default", ContainerPort: 8080}, 0},
 	}
 )
 
@@ -78,4 +88,19 @@ func (s *StoreSuite) TestCheckStatusPod() {
 	ch.KubernetesRoute.Pods = ch.KubernetesComponents.PodPorts
 	ch.CheckStatusPod()
 	assert.Equal(s.T(), 1, len(ch.PassedChecks), "Expected CheckStatusPod to pass")
+}
+
+func (s *StoreSuite) TestCheckListeningPod() {
+	for _, test := range PodTests {
+		var ch netkat.Checker
+		err := ch.ParseTarget(s.target)
+		if err != nil {
+			s.T().Fatal(err)
+		}
+		ch.Client = s.client
+		ch.KubernetesRoute = &netkat.KubernetesRoute{}
+		ch.KubernetesRoute.Pods = []*netkat.PodPort{&test.PodPort}
+		ch.CheckListeningPod()
+		assert.Equal(s.T(), test.Expected, len(ch.PassedChecks), "Expected CheckListeningPod to pass")
+	}
 }
