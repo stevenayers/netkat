@@ -6,7 +6,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func (s *StoreSuite) TestGetPods() {
+func (s *StoreSuite) TestGets() {
 	pods := s.client.GetPods()
 	services := s.client.GetServices()
 	ingresses := s.client.GetIngresses()
@@ -26,31 +26,22 @@ func (s *StoreSuite) TestGetPods() {
 }
 
 func (s *StoreSuite) TestGetServices() {
-	pods, err := s.client.CoreV1().Services("").List(v1.ListOptions{})
+	_, err := s.client.CoreV1().Services("").List(v1.ListOptions{})
 	if err != nil {
 		s.T().Fatal(err)
-	}
-	for _, pod := range pods.Items {
-		fmt.Print(pod)
 	}
 }
 
 func (s *StoreSuite) TestGetIngress() {
-	pods, err := s.client.ExtensionsV1beta1().Ingresses("").List(v1.ListOptions{})
+	_, err := s.client.ExtensionsV1beta1().Ingresses("").List(v1.ListOptions{})
 	if err != nil {
 		s.T().Fatal(err)
-	}
-	for _, pod := range pods.Items {
-		fmt.Print(pod)
 	}
 }
 
-func (s *StoreSuite) TestGetDeployments() {
-	pods, err := s.client.ExtensionsV1beta1().Deployments("").List(v1.ListOptions{})
+func (s *StoreSuite) TestGetPods() {
+	_, err := s.client.CoreV1().Pods("").List(v1.ListOptions{})
 	if err != nil {
 		s.T().Fatal(err)
-	}
-	for _, pod := range pods.Items {
-		fmt.Print(pod)
 	}
 }

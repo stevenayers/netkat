@@ -33,11 +33,6 @@ var (
 		{"http://google.com:8000/path", "google.com", 8000, "/path"},
 		{"google.com:8000/path", "google.com", 8000, "/path"},
 	}
-	PodTests = []PodTest{
-		{netkat.PodPort{PodName: "web-55b8c6998d-x7gpj", Namespace: "default", ContainerPort: 8080}, 1},
-		{netkat.PodPort{PodName: "web-55b8c6998d-x7gpj", Namespace: "default", ContainerPort: 1234}, 0},
-		{netkat.PodPort{PodName: "bad-name", Namespace: "default", ContainerPort: 8080}, 0},
-	}
 )
 
 func (s *StoreSuite) TestTarget() {
@@ -62,8 +57,9 @@ func (s *StoreSuite) TestRunChecks() {
 		s.T().Fatal(err)
 	}
 	ch.KubernetesComponents = s.client.GetComponents()
+	ch.Client = s.client
 	ch.RunChecks()
-	assert.Equal(s.T(), 2, len(ch.PassedChecks), "Expected checks to pass")
+	assert.Equal(s.T(), 3, len(ch.PassedChecks), "Expected checks to pass")
 }
 
 func (s *StoreSuite) TestCheckKubernetesRouteFromHost() {
@@ -91,6 +87,14 @@ func (s *StoreSuite) TestCheckStatusPod() {
 }
 
 func (s *StoreSuite) TestCheckListeningPod() {
+	var ch netkat.Checker
+	ch.KubernetesComponents = s.client.GetComponents()
+	PodTests := []PodTest{
+		{netkat.PodPort{PodName: ch.KubernetesComponents.PodPorts[0].PodName, Namespace: "default", ContainerPort: 8080}, 1},
+		{netkat.PodPort{PodName: ch.KubernetesComponents.PodPorts[0].PodName, Namespace: "default", ContainerPort: 1234}, 0},
+		{netkat.PodPort{PodName: "bad-name", Namespace: "default", ContainerPort: 8080}, 0},
+	}
+
 	for _, test := range PodTests {
 		var ch netkat.Checker
 		err := ch.ParseTarget(s.target)

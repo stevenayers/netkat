@@ -22,7 +22,7 @@ type (
 func (s *StoreSuite) SetupSuite() {
 	usr, _ := user.Current()
 	netkat.InitLogger(log.NewSyncWriter(os.Stdout), "error")
-	s.client = netkat.InitClient("netkat-test", fmt.Sprintf("%v/.kube/config", usr.HomeDir))
+	s.client = netkat.InitClient("minikube", fmt.Sprintf("%v/.kube/config", usr.HomeDir))
 	s.target = "http://hello-world.info"
 }
 
