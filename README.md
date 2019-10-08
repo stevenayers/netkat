@@ -10,11 +10,11 @@ CLI for troubleshooting kubernetes networking issues.
 ## Getting Started
 
 Build from source:
-* Requires Go 1.11.5 and dep package management
+* Requires Go 1.13 and dep package management
 ```bash
 git clone git@github.com:stevenayers/netkat.git
 cd netkat
-dep ensure
+go build
 go build cmd/main.go
 mv ./main /usr/local/bin/netkat
 ```
@@ -72,7 +72,7 @@ Incorrect configuration just throws an error and prints out nothing. This needs 
 * Matches A record against ingress/service
 * Checks service/ingress config
 * Checks ports mappings
-* Checks port is open on pod (to be implemented)
+* Checks port is open on pod
 * Checks LB rules on cloud provider side (to be implemented)
 * Checks LoadBalancerSourceRanges (to be implemented)
 
@@ -86,46 +86,23 @@ local -> http(s)://url/path
 local -> http(s)://url:port/path
 ```
 
-Checks
-```
-- CheckKubernetesRouteFromHost
-  Takes the host:port info and matches it to ingress, or/then service, then pod.
-- CheckKubernetesRouteFromPod (Not yet implemented)
-  Takes pod:port and maps backwards to a hostname, then checks the host configuration.
-- CheckKubernetesRouteFromInternalHost (Not yet implemented)
-  Takes the host:port info and matches it to ingress, or/then service, then pod, but for intra-cluster situations.
-- CheckKubernetesRoutePodToPod (Not yet implemented)
-  Takes pod:port and maps to pod:port
-- CheckStatusPod (Not yet implemented)
-  Checks pod status is running
-- CheckStatusIngressController (Not yet implemented)
-  Checks nginx-ingress is healthy.
-- CheckStatusKubeDns (Not yet implemented)
-  Checks kube-dns is healthy.
-- CheckListeningPod (Not yet implemented)
-  Portforwards directly to pod and checks connection
-- CheckListeningService (Not yet implemented)
-  Portforwards to service and checks connection
-- CheckSourceRangesIngress (Not yet implemented)
-  Checks any source range annotations on ingress against originating IP
-- CheckSourceRangesService (Not yet implemented)
-  Checks any source range annotations on service against originating IP
-- CheckInboundRulesLBGCP (Not yet implemented)
-  Checks originating IP against inbound rules for Load Balancer
-- CheckInboundRulesLBAzure (Not yet implemented)
-  Checks originating IP against inbound rules for Load Balancer
-- CheckInboundRulesLBAWS (Not yet implemented)
-  Checks originating IP against inbound rules for Load Balancer
-- CheckDnsOwnershipGCP (Not yet implemented)
-- CheckDnsOWnershipAzure (Not yet implemented)
-- CheckDnsOwnershipAWS (Not yet implemented)
-- CheckDnsInternalPodToPod (Not yet implemented)
-```
-
-
-Checks for v0.2-alpha:
-```bash
-- CheckStatusPod
-- CheckListeningPod
-
-```
+|**Check Name**|**Description**|**Done**|
+|:-----:|:-----:|:-----:|
+CheckKubernetesRouteFromHost| Takes the host:port info and matches it to ingress or/then service then pod. | x
+CheckKubernetesRouteFromPod| Takes pod:port and maps backwards to a hostname then checks the host configuration. | 
+CheckKubernetesRouteFromInternalHost| Takes the host:port info and matches it to ingress or/then service then pod but for intra-cluster situations. | 
+CheckKubernetesRoutePodToPod|  Takes pod:port and maps to pod:port| 
+CheckStatusPod|  Checks pod status is running|x
+CheckStatusIngressController| Checks nginx-ingress is healthy.| 
+CheckStatusKubeDns|  Checks kube-dns is healthy.| 
+CheckListeningPod|  Portforwards directly to pod and checks connection|x
+CheckListeningService|  Portforwards to service and checks connection| 
+CheckSourceRangesIngress|  Checks any source range annotations on ingress against originating IP| 
+CheckSourceRangesService|  Checks any source range annotations on service against originating IP| 
+CheckInboundRulesLBGCP|  Checks originating IP against inbound rules for Load Balancer| 
+CheckInboundRulesLBAzure|  Checks originating IP against inbound rules for Load Balancer| 
+CheckInboundRulesLBAWS|  Checks originating IP against inbound rules for Load Balancer| 
+CheckDnsOwnershipGCP| | 
+CheckDnsOWnershipAzure| | 
+CheckDnsOwnershipAWS| | 
+CheckDnsInternalPodToPod| | 
