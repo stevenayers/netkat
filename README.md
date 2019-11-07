@@ -26,6 +26,7 @@ $ netkat -h
 Example Usage:
 ```bash
 $ netkat grafana.digital.foobar.com -context kops-dev -config ~/.kube/config
+$ netkat pod/grafana-fb86ad62c-f63x9:3000 -context kops-dev -config ~/.kube/config
 ```
 ```
 === RUN   CheckKubernetesRouteFromHost
@@ -89,19 +90,19 @@ local -> http(s)://url:port/path
 |**Check Name**|**Description**|**Done**|
 |:-----:|:-----:|:-----:|
 CheckKubernetesRouteFromHost| Takes the host:port info and matches it to ingress or/then service then pod. | x
-CheckKubernetesRouteFromPod| Takes pod:port and maps backwards to a hostname then checks the host configuration. | 
+CheckStatusPod|  Checks pod status is running| x
+CheckListeningPod|  Portforwards directly to pod and checks connection| x
+CheckKubernetesRouteFromPod| Takes pod:port and maps backwards to a hostname then checks the host configuration. | x
 CheckKubernetesRouteFromInternalHost| Takes the host:port info and matches it to ingress or/then service then pod but for intra-cluster situations. | 
-CheckKubernetesRoutePodToPod|  Takes pod:port and maps to pod:port| 
-CheckStatusPod|  Checks pod status is running|x
-CheckStatusIngressController| Checks nginx-ingress is healthy.| 
-CheckStatusKubeDns|  Checks kube-dns is healthy.| 
-CheckListeningPod|  Portforwards directly to pod and checks connection|x
-CheckListeningService|  Portforwards to service and checks connection| 
-CheckSourceRangesIngress|  Checks any source range annotations on ingress against originating IP| 
-CheckSourceRangesService|  Checks any source range annotations on service against originating IP| 
-CheckInboundRulesLBGCP|  Checks originating IP against inbound rules for Load Balancer| 
-CheckInboundRulesLBAzure|  Checks originating IP against inbound rules for Load Balancer| 
-CheckInboundRulesLBAWS|  Checks originating IP against inbound rules for Load Balancer| 
+CheckKubernetesRoutePodToPod| Takes pod:port and maps to pod:port| 
+CheckStatusNginxIngress| Checks nginx-ingress is healthy.| 
+CheckStatusTraefikIngress| Checks traefik ingress is healthy.| 
+CheckStatusKubeDns| Checks kube-dns is healthy.| 
+CheckSourceRangesIngress| Checks any source range annotations on ingress against originating IP. | 
+CheckSourceRangesService| Checks any source range annotations on service against originating IP. | 
+CheckInboundRulesLB| Checks originating IP against inbound rules for Load Balancer. | 
+CheckInboundRulesLBAzure|  hecks originating IP against inbound rules for Load Balancer. | 
+CheckInboundRulesLBAWS| Checks originating IP against inbound rules for Load Balancer. | 
 CheckDnsOwnershipGCP| | 
 CheckDnsOWnershipAzure| | 
 CheckDnsOwnershipAWS| | 

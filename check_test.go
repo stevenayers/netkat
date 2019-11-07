@@ -18,6 +18,11 @@ type (
 		PodPort  netkat.PodPort
 		Expected int
 	}
+
+	ServiceTest struct {
+		ServicePort netkat.ServicePort
+		Expected    int
+	}
 )
 
 var (
@@ -91,10 +96,9 @@ func (s *StoreSuite) TestCheckListeningPod() {
 	ch.KubernetesComponents = s.client.GetComponents()
 	PodTests := []PodTest{
 		{netkat.PodPort{PodName: ch.KubernetesComponents.PodPorts[0].PodName, Namespace: "default", ContainerPort: 8080}, 1},
-		{netkat.PodPort{PodName: ch.KubernetesComponents.PodPorts[0].PodName, Namespace: "default", ContainerPort: 1234}, 0},
+		{netkat.PodPort{PodName: ch.KubernetesComponents.PodPorts[0].PodName, Namespace: "default", ContainerPort: 54921}, 0},
 		{netkat.PodPort{PodName: "bad-name", Namespace: "default", ContainerPort: 8080}, 0},
 	}
-
 	for _, test := range PodTests {
 		var ch netkat.Checker
 		err := ch.ParseTarget(s.target)
@@ -105,6 +109,7 @@ func (s *StoreSuite) TestCheckListeningPod() {
 		ch.KubernetesRoute = &netkat.KubernetesRoute{}
 		ch.KubernetesRoute.Pods = []*netkat.PodPort{&test.PodPort}
 		ch.CheckListeningPod()
-		assert.Equal(s.T(), test.Expected, len(ch.PassedChecks), "Expected CheckListeningPod to pass")
+		assert.Equal(s.T(), test.Expected, len(ch.PassedChecks), "Expected CheckListeningPod to pass",
+			test.PodPort.PodName, test.PodPort.ContainerPort)
 	}
 }

@@ -142,7 +142,7 @@ func (ch *Checker) FailCheck() {
 	fmt.Printf(
 		"--- FAIL: %s\n", functionName,
 	)
-	ch.PassedChecks = append(ch.FailedChecks, functionName)
+	ch.FailedChecks = append(ch.FailedChecks, functionName)
 }
 
 func (ch *Checker) CheckKubernetesRouteFromHost() {
@@ -217,15 +217,11 @@ func (ch *Checker) CheckListeningPod() {
 	PrintCheckHeader()
 	if len(ch.KubernetesRoute.Pods) > 0 {
 		for _, p := range ch.KubernetesRoute.Pods {
-			res, err := ch.Client.GetPortforwardResponse(p)
-			if err != nil {
+			if !ch.Client.IsPodListening(p) {
 				_ = level.Error(Logger).Log(
-					"msg", fmt.Sprintf("Error connecting to port: %v", err))
-				return
-			}
-			if res.StatusCode != 200 {
-				_ = level.Error(Logger).Log(
-					"msg", fmt.Sprintf("Bad HTTP Status Code: %v", res.StatusCode))
+					"msg",
+					fmt.Sprintf(
+						"Pod '%v' is not accepting connections on port: %v", p.PodName, p.ContainerPort))
 				ch.FailCheck()
 				return
 			}

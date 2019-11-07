@@ -99,7 +99,7 @@ func (co *KubernetesComponents) FindServicePortForHost(t *Target) (servicePort *
 	case len(servicePorts) > 1:
 		err = errors.New("found more than one service resource matching the host")
 	case len(servicePorts) == 0:
-		err = errors.New("could not find service resource matching the host")
+		return
 	default:
 		servicePort = servicePorts[0]
 	}
@@ -133,6 +133,17 @@ func (co *KubernetesComponents) FindPodPortForServicePort(s *ServicePort) (podPo
 	if len(podPorts) == 0 {
 		err = errors.New("could not find pod port matching the service port")
 	}
+	return
+}
+
+func (co *KubernetesComponents) FindPodPort(n string) (podPort *PodPort, err error) {
+	for _, p := range co.PodPorts {
+		if n == p.PodName {
+			podPort = p
+			return
+		}
+	}
+	err = errors.New("could not find pod port matching the specified pod name")
 	return
 }
 
@@ -307,7 +318,7 @@ func IngressesToIngressPaths(apiIngresses *v1beta1.IngressList) (ingressPaths []
 	return
 }
 
-func (c *Client) GetPortforwardResponse(p *PodPort) (res *http.Response, err error) {
+func (c *Client) IsPodListening(p *PodPort) (result bool) {
 	roundTripper, upgrader, err := spdy.RoundTripperFor(c.Config)
 	if err != nil {
 		_ = level.Error(Logger).Log("msg", err)
@@ -332,6 +343,7 @@ func (c *Client) GetPortforwardResponse(p *PodPort) (res *http.Response, err err
 			}
 			if len(errOut.String()) != 0 {
 				_ = level.Error(Logger).Log("msg", errOut.String())
+				fmt.Println(errOut.String())
 				wait.Done()
 				return
 			} else if len(out.String()) != 0 {
@@ -347,7 +359,13 @@ func (c *Client) GetPortforwardResponse(p *PodPort) (res *http.Response, err err
 	}()
 	wait.Wait()
 	pfUrl := fmt.Sprintf("http://127.0.0.1:%v", p.ContainerPort)
-	res, err = http.Get(pfUrl)
+	_, err = http.Get(pfUrl)
 	close(stopChan)
+	if err != nil {
+		_ = level.Error(Logger).Log("msg", err)
+		result = false
+	} else {
+		result = true
+	}
 	return
 }
